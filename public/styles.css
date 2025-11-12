@@ -1,0 +1,71 @@
+/* Header Menu */
+#menu-btn.open span:nth-child(1) {
+  transform: rotate(45deg) translateY(6px);
+}
+
+#menu-btn.open span:nth-child(2) {
+  opacity: 0;
+}
+
+#menu-btn.open span:nth-child(3) {
+  transform: rotate(-45deg) translateY(-6px);
+}
+
+#menu-btn span {
+  transition: all 0.3s ease;
+}
+
+/* Index */
+body {
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+}
+
+.section-padding {
+  padding: 5rem 0;
+}
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.hero-image {
+  animation: float 6s ease-in-out infinite;
+}
+
+.feature-icon {
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover .feature-icon {
+  transform: scale(1.1);
+}
+
+.stats-counter {
+  transition: all 0.5s ease;
+}
+
+.tool-card {
+  transition: all 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.tool-card:hover {
+  transform: rotateY(10deg) rotateX(5deg);
+}
+
+.parallax-bg {
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
