@@ -1,0 +1,25 @@
+<!-- views/result.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Conversion Result - Convify</title>
+  <link href="/styles.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded-2xl shadow-lg w-96 text-center">
+    <h1 class="text-2xl font-bold mb-6 text-indigo-600">✅ Converted Successfully!</h1>
+
+    <img src="<%= convertedFile %>" alt="Converted" class="mx-auto mb-4 rounded-lg shadow"/>
+
+    <a href="<%= convertedFile %>" download
+      class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg inline-block font-semibold">
+      Download <%= format %>
+    </a>
+
+    <div class="mt-4">
+      <a href="/" class="text-indigo-500 hover:underline">Convert another</a>
+    </div>
+  </div>
+</body>
+</html>
