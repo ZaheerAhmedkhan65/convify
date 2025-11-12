@@ -1,0 +1,62 @@
+<header class="w-full fixed top-0 left-0 bg-white shadow-md z-50">
+  <div class="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
+   <div class="flex items-center space-x-2">
+        <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center">
+          <i class="fas fa-image text-white text-lg"></i>
+        </div>
+        <span class="text-xl font-bold text-dark">Convify</span>
+      </div>
+
+      <div class="hidden md:flex space-x-8">
+        <a href="#features" class="text-dark hover:text-primary transition-colors">Features</a>
+        <a href="#tools" class="text-dark hover:text-primary transition-colors">Tools</a>
+        <a href="#stats" class="text-dark hover:text-primary transition-colors">Stats</a>
+        <a href="#testimonials" class="text-dark hover:text-primary transition-colors">Testimonials</a>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <a href="/convert" class="text-dark hover:text-primary transition-colors">Login</a>
+        <a href="/convert" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition-colors">Get
+          Started</a>
+      </div>
+  </div>
+
+  <!-- Hamburger Button (Mobile) -->
+  <button id="menu-btn" class="md:hidden flex flex-col space-y-1 focus:outline-none">
+    <span class="block w-6 h-0.5 bg-gray-700"></span>
+    <span class="block w-6 h-0.5 bg-gray-700"></span>
+    <span class="block w-6 h-0.5 bg-gray-700"></span>
+  </button>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobile-menu" class="hidden md:hidden bg-white shadow-md border-t border-gray-200">
+    <nav class="flex flex-col space-y-2 px-6 py-4">
+      <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition">Home</a>
+      <a href="/convert" class="text-gray-700 hover:text-blue-600 font-medium transition">Convert</a>
+      <a href="/history" class="text-gray-700 hover:text-blue-600 font-medium transition">History</a>
+      <a href="/about" class="text-gray-700 hover:text-blue-600 font-medium transition">About</a>
+      <div class="border-t border-gray-300 pt-3 flex space-x-3">
+        <a href="/signup"
+          class="flex-1 text-center px-4 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition">
+          Sign Up
+        </a>
+        <a href="/signin"
+          class="flex-1 text-center px-4 py-2 rounded-md border border-blue-600 text-blue-600 font-medium hover:bg-blue-50 transition">
+          Sign In
+        </a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const menuBtn = document.getElementById("menu-btn");
+  const mobileMenu = document.getElementById("mobile-menu");
+
+  menuBtn.addEventListener("click", () => {
+    mobileMenu.classList.toggle("hidden");
+    // Animate hamburger icon
+    menuBtn.classList.toggle("open");
+  });
+</script>

@@ -1,0 +1,351 @@
+
+    <style>
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-width: 350px;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.success {
+            background-color: #10b981;
+        }
+        .toast.error {
+            background-color: #ef4444;
+        }
+        .toast.info {
+            background-color: #3b82f6;
+        }
+        .toast.warning {
+            background-color: #f59e0b;
+        }
+    </style>
+    <div class="container mx-auto px-4">
+        <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-3xl mx-auto">
+            <h1 class="text-3xl font-bold mb-6 text-center text-indigo-600">
+                Image Converter
+            </h1>
+            
+            <!-- Guide message -->
+            <p class="text-gray-600 mb-6">
+                Drag and drop images here to convert them. You can also select multiple images at once.
+            </p>
+
+            <!-- Drop zone -->
+            <div id="dropZone"
+                class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-500 transition">
+                <p class="text-gray-500">Drag & drop images here or click to select</p>
+                <input id="fileInput" type="file" multiple accept="image/*" class="hidden" />
+            </div>
+
+            <!-- Image preview list -->
+            <div id="previewContainer" class="mt-6 space-y-4 hidden"></div>
+
+            <!-- Overall progress -->
+            <div id="overallProgressContainer" class="hidden mt-6">
+                <p class="text-sm text-gray-700 mb-2 font-medium">Overall Progress</p>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div id="overallProgressBar" class="bg-indigo-600 h-3 rounded-full transition-all duration-300" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Convert button -->
+            <button id="convertBtn"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg w-full font-semibold mt-6 transition-colors hidden">
+                Convert All
+            </button>
+        </div>
+        
+        <div id="historySection" class="mt-10 hidden">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Conversion History</h2>
+            <div id="historyList" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <script>
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>${message}</span>
+                    <button class="ml-4 text-white hover:text-gray-200 focus:outline-none">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Show toast
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                hideToast(toast);
+            }, 5000);
+            
+            // Close button event
+            toast.querySelector('button').addEventListener('click', () => {
+                hideToast(toast);
+            });
+        }
+        
+        function hideToast(toastElement) {
+            toastElement.classList.remove('show');
+            setTimeout(() => {
+                if (toastElement.parentNode) {
+                    toastElement.parentNode.removeChild(toastElement);
+                }
+            }, 300);
+        }
+
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+        const previewContainer = document.getElementById("previewContainer");
+        const convertBtn = document.getElementById("convertBtn");
+        const overallBar = document.getElementById("overallProgressBar");
+        const overallContainer = document.getElementById("overallProgressContainer");
+
+        let files = [];
+
+        function formatBytes(bytes) {
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            if (bytes === 0) return '0 Byte';
+            const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+            return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+        }
+
+        function updateConvertButtonText() {
+            if (files.length === 1) {
+                convertBtn.textContent = "Convert";
+            } else {
+                convertBtn.textContent = "Convert All";
+            }
+        }
+
+        dropZone.addEventListener("click", () => fileInput.click());
+        dropZone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropZone.classList.add("border-indigo-500", "bg-indigo-50");
+        });
+        dropZone.addEventListener("dragleave", () => {
+            dropZone.classList.remove("border-indigo-500", "bg-indigo-50");
+        });
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("border-indigo-500", "bg-indigo-50");
+            handleFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
+
+        function handleFiles(selectedFiles) {
+            convertBtn.classList.remove("hidden");
+            files = Array.from(selectedFiles);
+            previewContainer.innerHTML = "";
+            previewContainer.classList.remove("hidden");
+            
+            // Update convert button text
+            updateConvertButtonText();
+
+            files.forEach((file, index) => {
+                const fileURL = URL.createObjectURL(file);
+                const fileFormat = file.name.split('.').pop().toUpperCase();
+                const div = document.createElement("div");
+                div.className = "flex items-center justify-between border rounded-lg p-3 shadow-sm file-item";
+                div.setAttribute('data-index', index);
+                div.innerHTML = `
+                <div class="flex items-center space-x-4">
+                    <img src="${fileURL}" class="w-16 h-16 object-cover rounded-lg border" alt="preview">
+                    <div>
+                        <p class="font-semibold text-gray-700">${file.name}</p>
+                        <p class="text-sm text-gray-500">${formatBytes(file.size)} • ${fileFormat}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <select id="format-${index}" class="border rounded-lg p-1 text-sm">
+                        <option value="png">PNG</option>
+                        <option value="jpg">JPG</option>
+                        <option value="webp">WEBP</option>
+                    </select>
+                    <div id="progress-container-${index}" class="mt-2 hidden">
+                        <div class="w-32 bg-gray-200 rounded-full h-2">
+                            <div id="progress-${index}" class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <a id="download-${index}" href="#" download class="hidden text-indigo-600 text-sm mt-2 block font-semibold">⬇ Download</a>
+                </div>
+            `;
+                previewContainer.appendChild(div);
+            });
+        }
+
+        convertBtn.addEventListener("click", async () => {
+            if (!files.length) {
+                showToast("Please upload at least one image.", "warning");
+                return;
+            }
+            
+            // Reset overall progress
+            overallBar.style.width = "0%";
+            overallContainer.classList.remove("hidden");
+            
+            // Disable convert button during conversion
+            convertBtn.disabled = true;
+            convertBtn.classList.add("opacity-50", "cursor-not-allowed");
+
+            let completed = 0;
+            let allConverted = [];
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const format = document.getElementById(`format-${i}`).value;
+               
+                const progressContainer = document.getElementById(`progress-container-${i}`);
+                progressContainer.classList.remove("hidden");
+
+                const formData = new FormData();
+                formData.append("image", file);
+                formData.append("format", format);
+
+                await new Promise((resolve) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open("POST", "/convert", true);
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            const percent = (e.loaded / e.total) * 100;
+                            document.getElementById(`progress-${i}`).style.width = percent + "%";
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        completed++;
+                        const overallPercent = (completed / files.length) * 100;
+                        overallBar.style.width = overallPercent + "%";
+
+                        const res = JSON.parse(xhr.responseText);
+                        if (res.success) {
+                            allConverted.push(res.file);
+                             
+                            // Remove progress bar for this file
+                            progressContainer.innerHTML = '';
+                            
+                            // Show download link
+                            const dl = document.getElementById(`download-${i}`);
+                            dl.href = res.file;
+                            dl.download = res.name;
+                            dl.classList.remove("hidden");
+
+                            // Save in localStorage
+                            const history = JSON.parse(localStorage.getItem("convifyHistory") || "[]");
+                            history.unshift({
+                                originalName: file.name,
+                                convertedName: res.name,
+                                format: res.format,
+                                size: res.size,
+                                filePath: res.file,
+                                date: res.date,
+                            });
+                            localStorage.setItem("convifyHistory", JSON.stringify(history));
+                        } else {
+                            showToast(`Failed to convert ${file.name}`, "error");
+                        }
+                        
+                        // If all files are processed, hide overall progress bar
+                        if (completed === files.length) {
+                            setTimeout(() => {
+                                overallContainer.classList.add("hidden");
+                            }, 500);
+                            
+                            // Show success message
+                            showToast(`Successfully converted ${completed} image${completed > 1 ? 's' : ''}!`, "success");
+                            
+                            // Re-enable convert button
+                            convertBtn.disabled = false;
+                            convertBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                            
+                            // Add ZIP download button if multiple files
+                            if (files.length > 1) {
+                                const existingZipBtn = document.getElementById('zipDownloadBtn');
+                                if (!existingZipBtn) {
+                                    const zipBtn = document.createElement("a");
+                                    zipBtn.id = 'zipDownloadBtn';
+                                    zipBtn.href = "/convert/download-zip";
+                                    zipBtn.className = "bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg w-full font-semibold mt-6 block text-center transition-colors";
+                                    zipBtn.textContent = "⬇ Download All (ZIP)";
+                                    previewContainer.appendChild(zipBtn);
+                                }
+                            }
+                        }
+                        
+                        resolve();
+                    };
+
+                    xhr.onerror = () => {
+                        completed++;
+                        showToast(`Error converting ${file.name}`, "error");
+                        
+                        if (completed === files.length) {
+                            overallContainer.classList.add("hidden");
+                            convertBtn.disabled = false;
+                            convertBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                        }
+                        
+                        resolve();
+                    };
+
+                    xhr.send(formData);
+                });
+            }
+            
+            // Reload history to show new conversions
+            loadHistory();
+        });
+
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem("convifyHistory") || "[]");
+            const list = document.getElementById("historyList");
+            const section = document.getElementById("historySection");
+
+            if (history.length === 0) return;
+
+            section.classList.remove("hidden");
+            list.innerHTML = "";
+
+            history.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "flex justify-between items-center border p-3 rounded-lg bg-white shadow-sm";
+                div.innerHTML = `
+                <div class="flex items-center space-x-4">
+                    <img src="${item.filePath}" class="w-16 h-16 object-cover rounded-lg border" alt="preview">
+                    <div>
+                        <p class="font-semibold text-gray-700">${item.originalName}</p>
+                        <p class="text-sm text-gray-500">${item.format} • ${item.size}</p>
+                        <p class="text-xs text-gray-400">${new Date(item.date).toLocaleString()}</p>
+                    </div>
+                </div>
+                <a href="${item.filePath}" download class="text-indigo-600 font-semibold hover:underline">Download</a>
+            `;
+                list.appendChild(div);
+            });
+        }
+
+        window.onload = loadHistory;
+    </script>
