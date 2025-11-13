@@ -16,6 +16,20 @@ db.serialize(() => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS resize_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      original_name TEXT,
+      resized_name TEXT,
+      width TEXT,
+      height TEXT,
+      crop TEXT,
+      file_path TEXT,
+      size TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 });
 
 module.exports = db;
