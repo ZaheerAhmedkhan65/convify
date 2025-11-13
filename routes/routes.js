@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const ConvertController = require("../controllers/convertController");
+const ResizeController = require("../controllers/resizeController");
 const { upload, uploadConverted } = require("../middlewares/upload"); // Cloudinary middlewares
 
 router.get("/convert", (req, res) => {
@@ -13,6 +14,9 @@ router.get("/convert/history", ConvertController.history);
 router.get("/resize", (req, res) => {
     res.render("resize", { title: "Image Resizer" });
 });
+router.post("/resize", upload.single("image"), ResizeController.resize);
+router.get("/resize/download", ResizeController.downloadZip);
+router.get("/resize/history", ResizeController.history);
 
 router.get("/bg_remover", (req, res) => {
     res.render("bg_remover", { title: "Background Remover" });

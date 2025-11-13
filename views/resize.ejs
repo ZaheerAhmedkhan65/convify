@@ -1,0 +1,249 @@
+<style>
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        transform: translateX(150%);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+        max-width: 350px;
+    }
+    .toast.show {
+        transform: translateX(0);
+    }
+    .toast.success {
+        background-color: #10b981;
+    }
+    .toast.error {
+        background-color: #ef4444;
+    }
+    .toast.info {
+        background-color: #3b82f6;
+    }
+    .toast.warning {
+        background-color: #f59e0b;
+    }
+</style>
+
+<div class="container mx-auto px-4">
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-3xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-center text-indigo-600">
+            Image Resize & Crop
+        </h1>
+        <p class="text-gray-600 mb-6 text-center">
+            Upload an image to resize or crop. You can preview before applying changes.
+        </p>
+
+        <!-- Upload section -->
+        <div id="resizeDropZone"
+            class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-500 transition">
+            <p class="text-gray-500">Drag & drop image here or click to select</p>
+            <input id="resizeFileInput" type="file" accept="image/*" class="hidden" />
+        </div>
+
+        <!-- Preview -->
+        <div id="resizePreview" class="mt-6 hidden">
+            <img id="resizeImage" class="max-w-full rounded-lg border mx-auto shadow" alt="preview" />
+            <div class="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Width (px)</label>
+                    <input id="resizeWidth" type="number" class="border rounded-lg p-2 w-full" placeholder="e.g. 800" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Height (px)</label>
+                    <input id="resizeHeight" type="number" class="border rounded-lg p-2 w-full" placeholder="e.g. 600" />
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" id="cropEnable" class="form-checkbox text-indigo-600">
+                    <span class="ml-2 text-sm text-gray-700">Enable Crop</span>
+                </label>
+            </div>
+
+            <div id="cropOptions" class="hidden mt-4 grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">X Start (px)</label>
+                    <input id="cropX" type="number" class="border rounded-lg p-2 w-full" placeholder="e.g. 100" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Y Start (px)</label>
+                    <input id="cropY" type="number" class="border rounded-lg p-2 w-full" placeholder="e.g. 100" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Crop Width (px)</label>
+                    <input id="cropWidth" type="number" class="border rounded-lg p-2 w-full" placeholder="e.g. 400" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Crop Height (px)</label>
+                    <input id="cropHeight" type="number" class="border rounded-lg p-2 w-full" placeholder="e.g. 400" />
+                </div>
+            </div>
+
+            <!-- Resize Button -->
+            <button id="resizeBtn"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg w-full font-semibold mt-6 transition-colors">
+                Resize / Crop
+            </button>
+
+            <!-- Download link -->
+            <a id="resizeDownload" href="#" download class="hidden text-indigo-600 text-center block font-semibold mt-4">⬇ Download Resized Image</a>
+        </div>
+    </div>
+
+    <!-- History Section -->
+    <div id="resizeHistorySection" class="mt-10 hidden">
+        <h2 class="text-xl font-semibold text-gray-700 mb-3">Resize & Crop History</h2>
+        <div id="resizeHistoryList" class="space-y-3"></div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer"></div>
+
+<script>
+    // Toast logic (same as converter)
+    function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span>${message}</span>
+                <button class="ml-4 text-white hover:text-gray-200 focus:outline-none">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>`;
+        toastContainer.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => hideToast(toast), 5000);
+        toast.querySelector('button').addEventListener('click', () => hideToast(toast));
+    }
+
+    function hideToast(toast) {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }
+
+    const dropZone = document.getElementById("resizeDropZone");
+    const fileInput = document.getElementById("resizeFileInput");
+    const preview = document.getElementById("resizePreview");
+    const image = document.getElementById("resizeImage");
+    const cropOptions = document.getElementById("cropOptions");
+    const cropCheckbox = document.getElementById("cropEnable");
+    const resizeBtn = document.getElementById("resizeBtn");
+    const downloadLink = document.getElementById("resizeDownload");
+
+    let selectedFile = null;
+
+    // File handling
+    dropZone.addEventListener("click", () => fileInput.click());
+    dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("border-indigo-500", "bg-indigo-50"); });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("border-indigo-500", "bg-indigo-50"));
+    dropZone.addEventListener("drop", e => {
+        e.preventDefault();
+        dropZone.classList.remove("border-indigo-500", "bg-indigo-50");
+        handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change", e => handleFile(e.target.files[0]));
+
+    cropCheckbox.addEventListener("change", () => {
+        cropOptions.classList.toggle("hidden", !cropCheckbox.checked);
+    });
+
+    function handleFile(file) {
+        if (!file) return;
+        selectedFile = file;
+        const url = URL.createObjectURL(file);
+        image.src = url;
+        preview.classList.remove("hidden");
+    }
+
+    resizeBtn.addEventListener("click", async () => {
+        if (!selectedFile) {
+            showToast("Please upload an image first.", "warning");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", selectedFile);
+        formData.append("width", document.getElementById("resizeWidth").value);
+        formData.append("height", document.getElementById("resizeHeight").value);
+
+        if (cropCheckbox.checked) {
+            formData.append("cropX", document.getElementById("cropX").value);
+            formData.append("cropY", document.getElementById("cropY").value);
+            formData.append("cropWidth", document.getElementById("cropWidth").value);
+            formData.append("cropHeight", document.getElementById("cropHeight").value);
+        }
+
+        resizeBtn.disabled = true;
+        resizeBtn.classList.add("opacity-50", "cursor-not-allowed");
+
+        try {
+            const res = await fetch("/resize", { method: "POST", body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                showToast("Image resized successfully!", "success");
+                downloadLink.href = data.file;
+                downloadLink.classList.remove("hidden");
+
+                // Save history
+                const history = JSON.parse(localStorage.getItem("resizeHistory") || "[]");
+                history.unshift({
+                    name: data.name,
+                    width: data.width,
+                    height: data.height,
+                    file: data.file,
+                    date: data.date
+                });
+                localStorage.setItem("resizeHistory", JSON.stringify(history));
+                loadResizeHistory();
+            } else {
+                showToast("Failed to resize image.", "error");
+            }
+        } catch (err) {
+            showToast("Error processing image.", "error");
+        }
+
+        resizeBtn.disabled = false;
+        resizeBtn.classList.remove("opacity-50", "cursor-not-allowed");
+    });
+
+    // Load history
+    function loadResizeHistory() {
+        const history = JSON.parse(localStorage.getItem("resizeHistory") || "[]");
+        const section = document.getElementById("resizeHistorySection");
+        const list = document.getElementById("resizeHistoryList");
+
+        if (history.length === 0) return;
+        section.classList.remove("hidden");
+        list.innerHTML = "";
+
+        history.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "flex justify-between items-center border p-3 rounded-lg bg-white shadow-sm";
+            div.innerHTML = `
+                <div class="flex items-center space-x-4">
+                    <img src="${item.file}" class="w-16 h-16 object-cover rounded-lg border" alt="preview">
+                    <div>
+                        <p class="font-semibold text-gray-700">${item.name}</p>
+                        <p class="text-sm text-gray-500">${item.width}x${item.height}</p>
+                        <p class="text-xs text-gray-400">${new Date(item.date).toLocaleString()}</p>
+                    </div>
+                </div>
+                <a href="${item.file}" download class="text-indigo-600 font-semibold hover:underline">Download</a>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    window.onload = loadResizeHistory;
+</script>
