@@ -15,8 +15,9 @@ class ConvertController {
             const outputFormat = req.body.format;
             const baseName = path.parse(req.file.filename || Date.now().toString()).name;
 
-            const tempInputPath = path.join(__dirname, "temp_input." + path.extname(req.file.originalname));
-            const tempOutputPath = path.join(__dirname, `temp_output.${outputFormat}`);
+            const tempInputPath = path.join("/tmp", `temp_input${path.extname(req.file.originalname)}`);
+            const tempOutputPath = path.join("/tmp", `temp_output.${outputFormat}`);
+
 
             // Download the uploaded Cloudinary image locally for conversion
             const https = require("https");
