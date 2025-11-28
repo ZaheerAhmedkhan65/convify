@@ -4,6 +4,9 @@ const ConvertController = require("../controllers/convertController");
 const ResizeController = require("../controllers/resizeController");
 const { upload, uploadConverted } = require("../middlewares/upload"); // Cloudinary middlewares
 
+router.get("/", (req, res) => {
+    res.render("index", { title: "Convify" });
+})
 router.get("/convert", (req, res) => {
     res.render("convert", { title: "Image Converter" });
 });
